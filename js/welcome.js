@@ -93,11 +93,14 @@ export default class Welcome {
                 y: touch.clientY
             };
             
-            // 检查是否点击了tab按钮
-            const tabId = this.checkTabClick(touchPos);
-            if (tabId) {
-                this.currentPage = tabId;
-                return;
+            // 只有在首页和我的页面才检查tab按钮点击
+            if (this.currentPage === 'home' || this.currentPage === 'my') {
+                // 检查是否点击了tab按钮
+                const tabId = this.checkTabClick(touchPos);
+                if (tabId) {
+                    this.currentPage = tabId;
+                    return;
+                }
             }
             
             // 根据当前页面检查是否点击了页面内的按钮
