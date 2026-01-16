@@ -1,3 +1,3 @@
-import Main from './js/main';
+import Welcome from './js/welcome';
 
-new Main();
+new Welcome();
