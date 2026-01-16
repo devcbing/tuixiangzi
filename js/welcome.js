@@ -13,13 +13,39 @@ const ctx = canvas.getContext('2d');
 export default class Welcome {
     constructor() {
         this.currentPage = 'home'; // 当前显示的页面：'home'或'my'
-        this.bg = new BackGround(); // 创建背景对象
+        this.tabButtons = [];
+        this.isResourcesLoaded = false;
+        
+        // 初始化资源加载计数器
+        this.resourcesToLoad = 1; // 目前只有背景图片需要加载
+        this.resourcesLoaded = 0;
+        
+        // 创建背景对象
+        this.bg = new BackGround();
+        
+        // 创建页面实例
         this.home = new Home();
         this.my = new My();
-        this.tabButtons = [];
+        
+        // 监听背景图片加载完成事件
+        this.bg.on('loaded', () => {
+            this.resourceLoaded();
+        });
+        
+        // 初始化页面和事件
         this.init();
         this.bindEvents();
-        this.gameLoop(); // 启动渲染循环
+    }
+    
+    /**
+     * 资源加载完成回调
+     */
+    resourceLoaded() {
+        this.resourcesLoaded++;
+        if (this.resourcesLoaded >= this.resourcesToLoad) {
+            this.isResourcesLoaded = true;
+            this.gameLoop(); // 所有资源加载完成后再启动渲染循环
+        }
     }
 
     init() {
@@ -47,9 +73,8 @@ export default class Welcome {
      * 绑定事件
      */
     bindEvents() {
-        // 监听触摸事件
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
+        // 监听触摸事件 - 使用微信小游戏的事件API
+        wx.onTouchStart((e) => {
             const touch = e.touches[0];
             const touchPos = {
                 x: touch.clientX,

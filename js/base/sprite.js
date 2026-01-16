@@ -11,6 +11,19 @@ export default class Sprite extends Emitter {
     super();
     
     this.img = wx.createImage();
+    this.isLoaded = false;
+    
+    // 监听图片加载完成事件
+    this.img.onload = () => {
+      this.isLoaded = true;
+      this.emit('loaded');
+    };
+    
+    // 监听图片加载失败事件
+    this.img.onerror = (err) => {
+      console.error('图片加载失败:', imgSrc, err);
+    };
+    
     this.img.src = imgSrc;
 
     this.width = width;
@@ -26,7 +39,7 @@ export default class Sprite extends Emitter {
    * 将精灵图绘制在canvas上
    */
   render(ctx) {
-    if (!this.visible) return;
+    if (!this.visible || !this.isLoaded) return;
 
     ctx.drawImage(this.img, this.x, this.y, this.width, this.height);
   }
