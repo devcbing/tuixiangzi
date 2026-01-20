@@ -1,7 +1,7 @@
 /**
  * 游戏主函数
  */
-import './render'; // 确保canvas被创建和初始化
+import './render';
 import BackGround from './runtime/background'; // 导入背景类
 import Home from './home';
 import My from './my';
@@ -9,6 +9,7 @@ import Help from './help';
 import Start from './start';
 import History from './history';
 import SelectLevel from './selectLevel';
+ 
 
 // 获取canvas对象和2D上下文
 const canvas = GameGlobal.canvas;
@@ -34,6 +35,7 @@ export default class Welcome {
         this.start = new Start(); // 创建开始游戏页面实例
         this.history = new History(); // 创建历史记录页面实例
         this.selectLevel = new SelectLevel(); // 创建选择关卡页面实例
+        
         
         // 监听背景图片加载完成事件
         this.bg.on('loaded', () => {
@@ -85,7 +87,6 @@ export default class Welcome {
      * 绑定事件
      */
     bindEvents() {
-        // 监听触摸事件 - 使用微信小游戏的事件API
         wx.onTouchStart((e) => {
             const touch = e.touches[0];
             const touchPos = {
@@ -93,9 +94,7 @@ export default class Welcome {
                 y: touch.clientY
             };
             
-            // 只有在首页和我的页面才检查tab按钮点击
             if (this.currentPage === 'home' || this.currentPage === 'my') {
-                // 检查是否点击了tab按钮
                 const tabId = this.checkTabClick(touchPos);
                 if (tabId) {
                     this.currentPage = tabId;
@@ -103,39 +102,32 @@ export default class Welcome {
                 }
             }
             
-            // 根据当前页面检查是否点击了页面内的按钮
             if (this.currentPage === 'home') {
-                // 首页按钮检测
                 const buttonId = this.home.checkButtonClick(touchPos);
                 if (buttonId) {
                     this.handleHomeButtonClick(buttonId);
                 }
             } else if (this.currentPage === 'my') {
-                // 我的页面按钮检测（如果有）
                 const buttonId = this.my.checkButtonClick(touchPos);
                 if (buttonId) {
                     this.handleMyButtonClick(buttonId);
                 }
             } else if (this.currentPage === 'help') {
-                // 帮助页面按钮检测
                 const buttonId = this.help.checkButtonClick(touchPos);
                 if (buttonId) {
                     this.handleHelpButtonClick(buttonId);
                 }
             } else if (this.currentPage === 'start') {
-                // 开始游戏页面按钮检测
                 const buttonId = this.start.checkButtonClick(touchPos);
                 if (buttonId) {
                     this.handleStartButtonClick(buttonId);
                 }
             } else if (this.currentPage === 'history') {
-                // 历史记录页面按钮检测
                 const buttonId = this.history.checkButtonClick(touchPos);
                 if (buttonId) {
                     this.handleHistoryButtonClick(buttonId);
                 }
             } else if (this.currentPage === 'selectLevel') {
-                // 选择关卡页面按钮检测
                 const buttonId = this.selectLevel.checkButtonClick(touchPos);
                 if (buttonId) {
                     this.handleSelectLevelButtonClick(buttonId);
@@ -317,6 +309,7 @@ export default class Welcome {
             this.selectLevel.render(ctx, bg);
             // 选择关卡页面不显示底部tab按钮
         }
+        
     }
     
     /**

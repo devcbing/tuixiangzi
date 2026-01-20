@@ -2,6 +2,7 @@ import BackGround from './runtime/background'; // 导入背景类
 import Map from './runtime/map'; // 导入地图类
 import Button from './base/button'; // 导入按钮类
 import Home from './runtime/aaa'; // 导入首页类
+ 
 
 const ctx = canvas.getContext('2d'); // 获取canvas的2D绘图上下文
 
@@ -20,9 +21,11 @@ export default class Main {
     map = new Map(); // 创建地图
     home = new Home(); // 创建首页
     buttons = {}; // 存储按钮
+  _gesture = { active: false, startX: 0, startY: 0, startTime: 0, uiHit: false, dx: 0, dy: 0 };
     
     constructor() {
         this.gameStatus = GAME_STATUS.HOME; // 初始状态为首页
+        
         this.init();
         this.home.init();
         this.bindEvents();
@@ -76,7 +79,6 @@ export default class Main {
      * 绑定事件
      */
     bindEvents() {
-        // 监听触摸事件
         canvas.addEventListener('touchstart', (e) => {
             e.preventDefault();
             const touch = e.touches[0];
@@ -85,15 +87,12 @@ export default class Main {
                 y: touch.clientY
             };
             
-            // 根据游戏状态检测按钮点击
             if (this.gameStatus === GAME_STATUS.HOME) {
-                // 首页按钮检测
                 const buttonId = this.home.checkButtonClick(touchPos);
                 if (buttonId) {
                     this.handleHomeButtonClick(buttonId);
                 }
             } else {
-                // 游戏按钮检测
                 for (const buttonKey in this.buttons) {
                     const button = this.buttons[buttonKey];
                     if (button.checkClick) {
@@ -101,7 +100,6 @@ export default class Main {
                             break;
                         }
                     } else if (button.onClick) {
-                        // 返回首页按钮检测
                         if (touchPos.x >= button.x && touchPos.x <= button.x + button.width &&
                             touchPos.y >= button.y && touchPos.y <= button.y + button.height) {
                             button.onClick();
@@ -111,6 +109,54 @@ export default class Main {
                 }
             }
         });
+        canvas.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            if (!t) return;
+            if (this.gameStatus !== GAME_STATUS.PLAYING) return;
+            if (this.map.getLevel && this.map.getLevel() !== 0) return;
+            const x = t.clientX;
+            const y = t.clientY;
+            let uiHit = false;
+            for (const key in this.buttons) {
+                const b = this.buttons[key];
+                if (b && b.x !== undefined) {
+                    if (x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height) {
+                        uiHit = true;
+                        break;
+                    }
+                }
+            }
+            this._gesture.active = !uiHit;
+            this._gesture.uiHit = uiHit;
+            this._gesture.startX = x;
+            this._gesture.startY = y;
+            this._gesture.startTime = Date.now();
+            this._gesture.dx = 0;
+            this._gesture.dy = 0;
+        }, { passive: true });
+        canvas.addEventListener('touchmove', (e) => {
+            if (!this._gesture.active) return;
+            const t = e.touches[0];
+            if (!t) return;
+            this._gesture.dx = t.clientX - this._gesture.startX;
+            this._gesture.dy = t.clientY - this._gesture.startY;
+        }, { passive: true });
+        canvas.addEventListener('touchend', () => {
+            if (!this._gesture.active) return;
+            const duration = Date.now() - this._gesture.startTime;
+            const dist = Math.hypot(this._gesture.dx, this._gesture.dy);
+            const minBase = Math.min(canvas.width, canvas.height);
+            const swipeMinDistance = Math.max(30, Math.round(minBase * 0.05));
+            const swipeMaxTime = 300;
+            if (duration <= swipeMaxTime && dist >= swipeMinDistance) {
+                const direction = this._getSwipeDirection(this._gesture.dx, this._gesture.dy);
+                this.movePlayer(direction);
+            }
+            this._gesture.active = false;
+            this._gesture.uiHit = false;
+            this._gesture.dx = 0;
+            this._gesture.dy = 0;
+        }, { passive: true });
     }
     
     /**
@@ -309,6 +355,13 @@ export default class Main {
                 ctx.fillText(button.text, button.x + button.width / 2, button.y + button.height / 2);
             }
         }
+        
+    }
+    _getSwipeDirection(dx, dy) {
+        const ax = Math.abs(dx);
+        const ay = Math.abs(dy);
+        if (ax >= ay) return dx > 0 ? 'right' : 'left';
+        return dy > 0 ? 'down' : 'up';
     }
 
     /**

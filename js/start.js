@@ -20,6 +20,7 @@ export default class Start {
     bg = null; // 创建背景
     map = null; // 创建地图
     buttons = {}; // 存储按钮
+  _gesture = { active: false, startX: 0, startY: 0, startTime: 0, uiHit: false, dx: 0, dy: 0 };
     
     constructor() {
         this.gameStatus = GAME_STATUS.PLAYING; // 初始状态为游戏中
@@ -136,7 +137,48 @@ export default class Start {
                     break;
                 }
             }
+      if (this.gameStatus !== GAME_STATUS.PLAYING) return;
+      const x = touchPos.x;
+      const y = touchPos.y;
+      let uiHit = false;
+      for (const key in this.buttons) {
+        const b = this.buttons[key];
+        if (x >= b.x && x <= b.x + b.width && y >= b.y && y <= b.y + b.height) {
+          uiHit = true;
+          break;
+        }
+      }
+      this._gesture.active = !uiHit;
+      this._gesture.uiHit = uiHit;
+      this._gesture.startX = x;
+      this._gesture.startY = y;
+      this._gesture.startTime = Date.now();
+      this._gesture.dx = 0;
+      this._gesture.dy = 0;
         });
+    wx.onTouchMove((e) => {
+      if (!this._gesture.active) return;
+      const t = e.touches[0];
+      if (!t) return;
+      this._gesture.dx = t.clientX - this._gesture.startX;
+      this._gesture.dy = t.clientY - this._gesture.startY;
+    });
+    wx.onTouchEnd(() => {
+      if (!this._gesture.active) return;
+      const duration = Date.now() - this._gesture.startTime;
+      const dist = Math.hypot(this._gesture.dx, this._gesture.dy);
+      const minBase = Math.min(canvas.width, canvas.height);
+      const swipeMinDistance = Math.max(30, Math.round(minBase * 0.05));
+      const swipeMaxTime = 300;
+      if (duration <= swipeMaxTime && dist >= swipeMinDistance) {
+        const direction = this._getSwipeDirection(this._gesture.dx, this._gesture.dy);
+        this.movePlayer(direction);
+      }
+      this._gesture.active = false;
+      this._gesture.uiHit = false;
+      this._gesture.dx = 0;
+      this._gesture.dy = 0;
+    });
     }
     
     /**
@@ -231,6 +273,12 @@ export default class Start {
             ctx.strokeRect(button.x, button.y, button.width, button.height);
         }
     }
+  _getSwipeDirection(dx, dy) {
+    const ax = Math.abs(dx);
+    const ay = Math.abs(dy);
+    if (ax >= ay) return dx > 0 ? 'right' : 'left';
+    return dy > 0 ? 'down' : 'up';
+  }
     
     /**
      * 移动玩家
